@@ -59,6 +59,7 @@ def run(context, config_path):
         "-v $PWD:/app "
         f"-v {config.logging_output_directory_on_host}:{os.path.dirname(config.logging_path)} "
         f"-v {os.path.abspath(config['data_dir_on_host'])}:{config['data_dir']} "
+        f"-v {os.path.abspath(config['tmp_dir_on_host'])}:/tmp "
         "photobridge/flow_based_body_reshaping:latest /bin/bash"
     ).format(**run_options)
 
