@@ -1,0 +1,12 @@
+output/
+data/
+.vscode
+
+*.pyc
+__pycache__
+YOLOv4
+
+*.code-workspace
+
+# Model weights
+*.pth

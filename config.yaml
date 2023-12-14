@@ -1,0 +1,9 @@
+data_dir_on_host: "../../data/"
+data_dir: "/data"
+
+logging_output_directory_on_host: "/tmp/flow_based_body_reshaping"
+logging_path: "/tmp/log.html"
+
+
+input_images_directory: "/data/test_images"
+output_images_directory: "/tmp/results"
