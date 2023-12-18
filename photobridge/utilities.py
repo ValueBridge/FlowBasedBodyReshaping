@@ -2,6 +2,7 @@
 Module with utilities
 """
 
+import glob
 import logging
 import os
 import shutil
@@ -83,3 +84,20 @@ class ImagesLogger(logging.Logger):
             self.info("<img src='{}'>".format(image_path_in_html))
 
         self.info("<br>")
+
+
+def delete_files(directory: str, extensions: typing.List[str]):
+    """
+    Delete files with specified extensions from directory
+
+    Args:
+        directory (str): path to directory inside which files should be deleted
+        extensions (typing.List[str]): list of extensions of files to delete
+    """
+
+    patterns = [os.path.join(directory, "*{}".format(extension)) for extension in extensions]
+
+    # Delete all images in tmp directory
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            os.remove(path)

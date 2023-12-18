@@ -27,11 +27,12 @@ def body_reshaping(_context, config_path):
 
     import photobridge.utilities
 
-    # Delete all images in tmp directory
-    for path in glob.glob("/tmp/*.jpg") + glob.glob("/tmp/*.gif"):
-        os.remove(path)
-
     configuration = photobridge.utilities.read_yaml(config_path)
+
+    photobridge.utilities.delete_files(
+        directory=configuration.output_images_directory,
+        extensions=["jpg", "gif", "mp4"]
+    )
 
     reshaper_config_path = "config/test_cvpr_setting.toml"
     reshaper_default_config = config.test_config.TESTCONFIG
@@ -89,7 +90,7 @@ def body_reshaping_animations(_context, config_path):
     import os
 
     import cv2
-    import imageio
+    import moviepy.editor
     import numpy as np
     import toml
     import tqdm
@@ -99,11 +100,12 @@ def body_reshaping_animations(_context, config_path):
 
     import photobridge.utilities
 
-    # Delete all images in tmp directory
-    for path in glob.glob("/tmp/*.jpg") + glob.glob("/tmp/*.gif"):
-        os.remove(path)
-
     configuration = photobridge.utilities.read_yaml(config_path)
+
+    photobridge.utilities.delete_files(
+        directory=configuration.output_images_directory,
+        extensions=["jpg", "gif", "mp4"]
+    )
 
     reshaper_config_path = "config/test_cvpr_setting.toml"
     reshaper_default_config = config.test_config.TESTCONFIG
@@ -123,7 +125,7 @@ def body_reshaping_animations(_context, config_path):
         log_path='test_log.txt',
         debug_level=0)
 
-    image_paths = glob.glob(os.path.join(configuration.input_images_directory, "*.jpg"))
+    image_paths = sorted(glob.glob(os.path.join(configuration.input_images_directory, "*.jpg")))
 
     for image_path in tqdm.tqdm(image_paths):
 
@@ -131,7 +133,7 @@ def body_reshaping_animations(_context, config_path):
 
         frames = [source_image]
 
-        for degree in np.arange(0.0, 3, 0.5):
+        for degree in np.arange(0.0, 2, 0.25):
 
             prediction, _ = reshape_base_algos.body_retoucher.BodyRetoucher.reshape_body(
                 src_img=source_image,
@@ -139,12 +141,86 @@ def body_reshaping_animations(_context, config_path):
 
             frames.append(prediction)
 
-        apng_path = os.path.join(
-            configuration.output_images_directory,
-            f"{os.path.splitext(os.path.basename(image_path))[0]}.apng")
+        # Make a video from frames with moviepy
+        def make_frame(time):
 
-        imageio.mimsave(
-            apng_path,
-            [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in frames],
-            loop=0,
-            fps=2)
+            time = int(time)
+            return cv2.cvtColor(frames[time], cv2.COLOR_BGR2RGB)
+
+        moviepy.editor.VideoClip(make_frame, duration=len(frames) - 1).write_videofile(
+            filename=os.path.join(
+                configuration.output_images_directory,
+                f"{os.path.splitext(os.path.basename(image_path))[0]}.mp4"),
+            fps=2,
+            audio=False
+        )
+
+
+@invoke.task
+def pose_estimations(_context, config_path):
+    """
+    Visualize pose estimations
+
+    Args:
+        _context (invoke.Context): context instance
+        config_path (str): path to configuration file
+    """
+
+    import glob
+    import os
+
+    import cv2
+    import icecream
+    import numpy as np
+    import toml
+    import tqdm
+
+    import config.test_config
+    import pose_estimator.body
+    import reshape_base_algos.body_retoucher
+    import reshape_base_algos.slim_utils
+
+    import photobridge.utilities
+
+    # Suppress scientific notation in numpy
+    np.set_printoptions(suppress=True)
+
+    configuration = photobridge.utilities.read_yaml(config_path)
+
+    photobridge.utilities.delete_files(
+        directory=configuration.output_images_directory,
+        extensions=["jpg", "gif", "mp4"]
+    )
+
+    reshaper_default_config = config.test_config.TESTCONFIG
+
+    pose_estimation_model = pose_estimator.body.Body(reshaper_default_config.pose_estimation_ckpt)
+
+    image_paths = sorted(glob.glob(os.path.join(configuration.input_images_directory, "*.jpg")))
+
+    for image_path in tqdm.tqdm(image_paths):
+
+        image = cv2.imread(image_path)
+
+        resized_image, resize_scale = reshape_base_algos.slim_utils.resize_on_long_side(
+            img=image,
+            long_side=300)
+
+        body_joints = pose_estimation_model(resized_image)
+
+        if body_joints.shape[0] >= 1:
+            body_joints[:, :, :2] = body_joints[:, :, :2] / resize_scale
+
+        for person_body_joints in body_joints:
+
+            image = reshape_base_algos.slim_utils.vis_joints(
+                image=image,
+                joints=person_body_joints,
+                color=(0, 255, 0))
+
+        cv2.imwrite(
+            os.path.join(
+                configuration.output_images_directory,
+                f"{os.path.splitext(os.path.basename(image_path))[0]}.jpg"),
+            image
+        )

@@ -217,9 +217,9 @@ class Body(object):
         return joints
 
 if __name__ == "__main__":
-    body_estimation = Body('../model/body_pose_model.pth')
+    body_estimation = Body('./models/body_pose_model.pth')
 
-    test_image = '../images/ski.jpg'
+    test_image = './test_cases/2c1bbb1425f481c8f.jpg'
     oriImg = cv2.imread(test_image)  # B,G,R order
     candidate, subset = body_estimation(oriImg)
     canvas = util.draw_bodypose(oriImg, candidate, subset)
