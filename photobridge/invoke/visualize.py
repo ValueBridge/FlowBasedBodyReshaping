@@ -180,6 +180,7 @@ def pose_estimations(_context, config_path):
     import reshape_base_algos.body_retoucher
     import reshape_base_algos.slim_utils
 
+    import photobridge.logging
     import photobridge.utilities
 
     # Suppress scientific notation in numpy
@@ -213,10 +214,9 @@ def pose_estimations(_context, config_path):
 
         for person_body_joints in body_joints:
 
-            image = reshape_base_algos.slim_utils.vis_joints(
+            image = photobridge.logging.get_pose_estimation_visualization(
                 image=image,
-                joints=person_body_joints,
-                color=(0, 255, 0))
+                joints=person_body_joints)
 
         cv2.imwrite(
             os.path.join(
