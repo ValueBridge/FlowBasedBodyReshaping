@@ -57,3 +57,32 @@ def get_pose_estimation_visualization(image: np.ndarray, joints: np.ndarray) -> 
                 colors[index], joint_thickness)
 
     return image
+
+
+def get_flow_visualization(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
+    """
+    Visualize flow on image. Use jet colormap for flow.
+
+    Args:
+        image (np.ndarray): image to visualize flow on
+        flow (np.ndarray): flow
+
+    Returns:
+        np.ndarray: image with flow visualized
+    """
+
+    image = image.astype(np.float32)
+
+    absolute_flow = np.abs(flow)
+
+    flow_colormap = cv2.applyColorMap(absolute_flow.astype(np.uint8), cv2.COLORMAP_JET).astype(np.float32)
+
+    flow_weight = (absolute_flow / np.max(absolute_flow)).astype(np.float32)
+
+    # Repeat flow weight to three channels
+    flow_weight = np.repeat(flow_weight[:, :, np.newaxis], 3, axis=2)
+
+    # Overlay weighted flow colormap over original image
+    overlay = (image * (1 - flow_weight)) + (flow_colormap * flow_weight)
+
+    return np.clip(overlay, 0, 255)
