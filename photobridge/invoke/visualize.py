@@ -25,6 +25,7 @@ def body_reshaping(_context, config_path):
     import config.test_config
     import reshape_base_algos.body_retoucher
 
+    import photobridge.ml
     import photobridge.utilities
 
     configuration = photobridge.utilities.read_yaml(config_path)
@@ -45,12 +46,12 @@ def body_reshaping(_context, config_path):
             custom_config=reshaper_config,
             default_config=reshaper_default_config)
 
-    reshape_base_algos.body_retoucher.BodyRetoucher.init(
+    body_retoucher = photobridge.ml.BodyRetoucher(
         reshape_ckpt_path=reshaper_default_config.reshape_ckpt_path,
         pose_estimation_ckpt=reshaper_default_config.pose_estimation_ckpt,
-        device=0, log_level='error',
-        log_path='test_log.txt',
-        debug_level=0)
+        device=0,
+        debug_level=0
+    )
 
     image_paths = glob.glob(os.path.join(configuration.input_images_directory, "*.jpg"))
 
@@ -58,7 +59,7 @@ def body_reshaping(_context, config_path):
 
         source_image = cv2.imread(image_path)
 
-        prediction, flow = reshape_base_algos.body_retoucher.BodyRetoucher.reshape_body(
+        prediction, _ = body_retoucher.reshape_body(
             src_img=source_image,
             degree=config.test_config.TESTCONFIG.degree)
 
