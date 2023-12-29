@@ -296,20 +296,6 @@ def flow_predictions(_context, config_path):
         cv2.imwrite(
             os.path.join(
                 configuration.output_images_directory,
-                f"{image_name}.jpg"),
-            image
-        )
-
-        cv2.imwrite(
-            os.path.join(
-                configuration.output_images_directory,
-                f"{image_name}_x_flow.jpg"),
-            photobridge.logging.get_flow_visualization(image=image, flow=flow[:, :, 0])
-        )
-
-        cv2.imwrite(
-            os.path.join(
-                configuration.output_images_directory,
-                f"{image_name}_y_flow.jpg"),
-            photobridge.logging.get_flow_visualization(image=image, flow=flow[:, :, 1])
+                f"{image_name}_combined_flow.jpg"),
+            photobridge.logging.get_flow_visualization_combined(image=image, flow=flow)
         )
