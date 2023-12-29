@@ -23,16 +23,17 @@ class BodyRetoucher(object):
         pass
 
     @classmethod
-    def init(cls,
-             reshape_ckpt_path,
-             pose_estimation_ckpt,
-             device,
-             log_level='info',
-             log_path='body_liquify.log',
-             debug_level=0,
-             network_input_H = 256,
-             network_input_W = 256):
-        
+    def init(
+        cls,
+        reshape_ckpt_path,
+        pose_estimation_ckpt,
+        device,
+        log_level='info',
+        log_path='body_liquify.log',
+        debug_level=0,
+        network_input_H = 256,
+        network_input_W = 256):
+
         cls._logger = Logger(filename=log_path, level=log_level)
         cls._logger.logger.info(time.strftime("init on %a %b %d %H:%M:%S %Y", time.localtime()))
 
@@ -116,7 +117,6 @@ class BodyRetoucher(object):
 
         return pred
 
-
     @classmethod
     def pred_joints(cls, img):
         if img is None:
@@ -155,7 +155,7 @@ class BodyRetoucher(object):
             return None
 
         # in this demo, we only reshape one person
-        person = PersonInfo(body_joints[0], cls._logger)
+        person = PersonInfo(body_joints[0])
 
         cls._logger.logger.info("joint:shape:{}".format(body_joints.shape))
 
