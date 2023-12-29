@@ -86,3 +86,48 @@ def get_flow_visualization(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
     overlay = (image * (1 - flow_weight)) + (flow_colormap * flow_weight)
 
     return np.clip(overlay, 0, 255)
+
+
+def get_flow_visualization_combined(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
+    """
+    Visualize combined x and y flows on image.
+
+    Args:
+        image (np.ndarray): image to visualize flow on
+        flow (np.ndarray): m x n x 2 flow tensor. First channel contains x flow, second channel contains y flow
+
+    Returns:
+        np.ndarray: image with flow visualized
+    """
+
+    image = image.astype(np.float32)
+
+    absolute_flow = np.abs(flow)
+
+    x_flow = absolute_flow[:, :, 0]
+    y_flow = absolute_flow[:, :, 1]
+
+    combined_flow = x_flow + y_flow
+    scaled_combined_flow = combined_flow / np.max(combined_flow)
+
+    epsilon = 1e-6
+
+    scaled_x_flow = x_flow / (np.max(x_flow) + epsilon)
+    scaled_y_flow = y_flow / (np.max(y_flow) + epsilon)
+
+    x_flow_colormap = cv2.applyColorMap(
+        (255 * scaled_x_flow).astype(np.uint8),
+        cv2.COLORMAP_JET).astype(np.float32)
+
+    y_flow_colormap = cv2.applyColorMap(
+        (255 * scaled_y_flow).astype(np.uint8),
+        cv2.COLORMAP_TWILIGHT).astype(np.float32)
+
+    combined_colormap = np.clip((x_flow_colormap + y_flow_colormap) / 2, 0, 255)
+
+    clipped_combined_weights_3d = np.repeat(scaled_combined_flow[:, :, np.newaxis], 3, axis=2)
+
+    # Overlay weighted flow colormap over original image
+    overlay = (image * (1 - clipped_combined_weights_3d)) + (combined_colormap * clipped_combined_weights_3d)
+
+    return np.clip(overlay, 0, 255)
