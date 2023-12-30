@@ -24,6 +24,7 @@ def body_reshaping(_context, config_path):
 
     import config.test_config
     import reshape_base_algos.body_retoucher
+    import reshape_base_algos.slim_utils
 
     import photobridge.ml
     import photobridge.utilities
@@ -55,12 +56,26 @@ def body_reshaping(_context, config_path):
 
     image_paths = glob.glob(os.path.join(configuration.input_images_directory, "*.jpg"))
 
+    small_size = 1200
+
     for image_path in tqdm.tqdm(image_paths):
 
         source_image = cv2.imread(image_path)
 
+        body_joints = body_retoucher.predict_joints(source_image)
+
+        if source_image.shape[0] > small_size or source_image.shape[1] > small_size:
+            scaled_down_image, _scale = reshape_base_algos.slim_utils.resize_on_long_side(source_image, small_size)
+            body_joints[:, :, :2] = body_joints[:, :, :2] * _scale
+        else:
+            scaled_down_image = source_image.copy()
+
+        person_info = reshape_base_algos.person_info.PersonInfo(body_joints[0])
+
         prediction, _ = body_retoucher.reshape_body(
             src_img=source_image,
+            person_info=person_info,
+            scaled_down_image=scaled_down_image,
             degree=config.test_config.TESTCONFIG.degree)
 
         file_stem = os.path.splitext(os.path.basename(image_path))[0]
@@ -74,6 +89,7 @@ def body_reshaping(_context, config_path):
             os.path.join(configuration.output_images_directory, f"{file_stem}_b_prediction.jpg"),
             prediction
         )
+
 
 
 @invoke.task

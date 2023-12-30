@@ -2,8 +2,6 @@
 Module with machine learning code
 """
 
-import logging
-
 import cv2
 import numpy as np
 import torch
@@ -63,25 +61,10 @@ class BodyRetoucher:
 
         return body_joints
 
-    def predict_flow(self, img):
-
-        body_joints = self.predict_joints(img)
-        small_size = 1200
-
-        if img.shape[0] > small_size or img.shape[1] > small_size:
-            _img, _scale = reshape_base_algos.slim_utils.resize_on_long_side(img, small_size)
-            body_joints[:, :, :2] = body_joints[:, :, :2] * _scale
-        else:
-            _img = img
-
-        if body_joints.shape[0] < 1:
-            return None
-
-        # in this demo, we only reshape one person
-        person = reshape_base_algos.person_info.PersonInfo(body_joints[0])
+    def predict_flow(self, img, resized_image, person: reshape_base_algos.person_info.PersonInfo):
 
         with torch.no_grad():
-            person_pred = person.pred_flow(_img, self.flow_generator,  self.device)
+            person_pred = person.pred_flow(resized_image, self.flow_generator,  self.device)
 
         flow = np.dstack((person_pred['rDx'], person_pred['rDy']))
 
@@ -105,9 +88,11 @@ class BodyRetoucher:
 
         return pred
 
-    def reshape_body(self, src_img, degree=1.0):
+    def reshape_body(
+            self, src_img, scaled_down_image, person_info: reshape_base_algos.person_info.PersonInfo,
+            degree=1.0):
 
-        flow = self.predict_flow(src_img)
+        flow = self.predict_flow(src_img, scaled_down_image, person_info)
 
         if config.test_config.TESTCONFIG.suppress_bg:
 
